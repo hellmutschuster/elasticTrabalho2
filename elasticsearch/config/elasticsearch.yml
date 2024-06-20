@@ -1,0 +1,23 @@
+# GENERAL SETTINS
+
+cluster.name:    "my-cluster"
+node.name:       "my-name"
+node.attr.zone:  "my-zone"
+
+network.host: 0.0.0.0
+
+http.port: 9200
+transport.port: 9300
+
+script.allowed_types: inline
+
+path.repo: ["/usr/share/elasticsearch"]
+xpack.license.self_generated.type: trial
+xpack.security.enabled: true
+
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+http.cors.allow-methods: OPTIONS, HEAD, GET, POST, PUT, DELETE
+http.cors.allow-headers: "X-Requested-With, Content-Type, Content-Length, Authorization"
+http.cors.allow-credentials: true
+
