@@ -36,17 +36,21 @@ body {
   button {
     padding: 10px 20px;
     border: none;
-    background-color: #007bff;
+    background-color: #EE4B2B;
     color: white;
     border-radius: 0 4px 4px 0;
     cursor: pointer;
   }
   
   button:hover {
-    background-color: #0056b3;
+    background-color: #d23f21;
   }
   
   .results {
+    margin-top: 20px;
+  }
+
+  .other-results {
     margin-top: 20px;
   }
   
