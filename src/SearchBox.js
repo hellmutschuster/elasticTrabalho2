@@ -37,120 +37,47 @@ const SearchBox = () => {
         {
           "query": {
             "function_score": {
-              "query": {
-                "multi_match": {
-                  "query": query,
-                  "fields": [
-                    "restaurant_name^5",
-                    "city^4",
-                    "cuisines^3"
-                  ]
-                }
-              },
-              "boost_mode": "multiply",
               "functions": [
                 {
                   "field_value_factor": {
+                    "field": "votes",
+                    "factor": 0.5,
+                    "modifier": "sqrt",
+                    "missing": 1
+                  }
+                },
+                {
+                  "field_value_factor": {
                     "field": "aggregate_rating",
-                    "factor": 3,
-                    "modifier": "linear"
+                    "factor": 5.0,
+                    "modifier": "square",
+                    "missing": 1
                   }
                 },
                 {
                   "field_value_factor": {
                     "field": "price_range",
-                    "factor": 1.5,
-                    "modifier": "linear"
+                    "factor": 2.5,
+                    "modifier": "none",
+                    "missing": 1
                   }
                 },
-                {
-                  "field_value_factor": {
-                    "field": "votes",
-                    "factor": 2,
-                    "modifier": "log1p"
-                  }
-                },
-                {
-                  "gauss": {
-                    "coordinates": {
-                      "origin": coordinates,
-                      "scale": "2km",
-                      "offset": "0km",
-                      "decay": 0.5
-                    }
-                  }
+              ],
+              "score_mode": "multiply",
+              "query": {
+                "multi_match": {
+                  "query": query,
+                  "fields": [
+                    "restaurant_name^10",
+                    "city^2",
+                    "cuisines^5"
+                  ]
                 }
-              ]
+              }
             }
           }
         }
-        
       );
-
-      "boosts": {
-            "aggregate_rating": {
-              "type": "functional",
-              "function": "linear",
-              "operation": "multiply",
-              "factor": 3
-            },
-            "price_range": {
-              "type": "functional",
-              "function": "linear",
-              "operation": "multiply",
-              "factor": 1.5
-            },
-            "votes": {
-              "type": "functional",
-              "function": "logarithmic",
-              "operation": "multiply",
-              "factor": 2
-            }
-          },
-          "coordinates": {
-              "type": "proximity",
-              "function": "exponential",
-              "center": coordinates,
-              "factor": 2
-            },
-
-"query": {
-            "multi_match": {
-              "query": query,
-              "fields": [
-                "restaurant_name^5",
-                "city^4",
-                "cuisines^3"
-              ]
-            }
-          },
-          "boosts": {
-            "aggregate_rating": {
-              "type": "functional",
-              "function": "linear",
-              "operation": "multiply",
-              "factor": 3
-            },
-            "price_range": {
-              "type": "functional",
-              "function": "linear",
-              "operation": "multiply",
-              "factor": 1.5
-            },
-            "votes": {
-              "type": "functional",
-              "function": "logarithmic",
-              "operation": "multiply",
-              "factor": 2
-            }
-          },
-          "coordinates": {
-              "type": "proximity",
-              "function": "exponential",
-              "center": coordinates,
-              "factor": 2
-          },
-        }
 
       const allResults = response.data.hits.hits;
       const localResults = [];
@@ -158,7 +85,7 @@ const SearchBox = () => {
 
       allResults.forEach(result => {
         const distance = calcDist(coordinates, result._source.coordinates);
-        if (distance <= 2) {
+        if (distance <= 5) {
           localResults.push(result);
         } else {
           otherResults.push(result);
@@ -204,7 +131,7 @@ const SearchBox = () => {
           </div>
         )}
         <div className="other-results">
-          <h2>Você também pode gostar</h2>
+          <h2>Restaurantes</h2>
           {otherResults.map((result) => (
             <div key={result._id} className="result-item">
               <h3>{result._source.restaurant_name}</h3>
