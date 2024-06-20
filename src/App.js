@@ -5,7 +5,7 @@ import './styles.css';
 const App = () => {
   return (
     <div className="container">
-      <h1>Diário Oficial da União</h1>
+      <h1>iComida</h1>
       <SearchBox />
     </div>
   );

@@ -5,7 +5,7 @@ from elasticsearch.helpers import bulk
 client = Elasticsearch('http://elasticsearch:9200')
 
 PATH = "restaurants.csv"
-INDEX_NAME = "iComida"
+INDEX_NAME = "icomida"
 MAX_ANALYZED_OFFSET = 2000000
 
 def generator(df, index_name, limit = None):
@@ -24,9 +24,11 @@ def generator(df, index_name, limit = None):
 
     df = df.replace(replace_values, regex = True)
 
-    df['Coordinates'] = df.apply(lambda row: f"{row['Latitude']}, {row['Longitude']}")
+    df['Coordinates'] = df.apply(lambda row: f"{row.Latitude}, {row.Longitude}", axis = 1)
 
-    df.drop(['RestaurantID', 'CountryCode', 'Address', 'Locality', "LocalityVerbose", 'Longitude', 'Latitude', 'HasTableBooking', 'HasOnlineDelivery', 'IsDeliveringNow', 'SwitchToOrderMenu', 'RatingText', "RatingColor"], axis = 1)
+    df = df.drop(['CountryCode', 'Address', 'Locality', "LocalityVerbose", 'Longitude', 'Latitude', 'HasTableBooking', 'HasOnlineDelivery', 'IsDeliveringNow', 'SwitchToOrderMenu', 'RatingText', "RatingColor"], axis = 1)
+    
+    df = df.dropna()
 
     df = df.to_dict(orient='records')
 
@@ -35,15 +37,15 @@ def generator(df, index_name, limit = None):
             '_index': index_name,
             '_id': line.get("RestaurantID", None),
             '_source': {
-                'RestaurantName': line.get('RestaurantName', ''),
-                'City': line.get('City', ''),
-                'Coordinates': line.get('Coordinates', ''),
-                'Cuisines': line.get('Cuisines', ''),
-                'AverageCostForTwo': line.get('AverageCostForTwo', ''),
-                'Currency': line.get('Currency', ''),
-                'PriceRange': line.get('PriceRange', ''),
-                'Aggregaterating': line.get('Aggregaterating', ''),
-                'Votes': line.get('Votes', '')
+                'restaurant_name': line.get('RestaurantName', ''),
+                'city': line.get('City', ''),
+                'coordinates': line.get('Coordinates', ''),
+                'cuisines': line.get('Cuisines', ''),
+                'average_cost_for_two': line.get('AverageCostForTwo', ''),
+                'currency': line.get('Currency', ''),
+                'price_range': line.get('PriceRange', ''),
+                'aggregate_rating': line.get('AggregateRating', ''),
+                'votes': line.get('Votes')
             }
         }
 

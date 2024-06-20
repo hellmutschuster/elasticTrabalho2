@@ -19,7 +19,7 @@ const calcDist = (myLocation, restaurantLocation) => {
   return getDistance(
     myLocation,
     restaurantLocation
-  );
+  ) / 1000;
 }
 
 const SearchBox = () => {
@@ -33,65 +33,141 @@ const SearchBox = () => {
     event.preventDefault();
 
     try {
-      const response = await axios.post('http://localhost:9200/iComida/_search', 
+      const response = await axios.post('http://localhost:9200/icomida/_search', 
         {
-          "query": query,
-          "search_fields": {
-            "RestaurantName": {
-              "weight": 5
-            },
-            "City": {
-              "weight": 1.5
-            },
-            "Cuisines": {
-              "weight": 3
+          "query": {
+            "function_score": {
+              "query": {
+                "multi_match": {
+                  "query": query,
+                  "fields": [
+                    "restaurant_name^5",
+                    "city^4",
+                    "cuisines^3"
+                  ]
+                }
+              },
+              "boost_mode": "multiply",
+              "functions": [
+                {
+                  "field_value_factor": {
+                    "field": "aggregate_rating",
+                    "factor": 3,
+                    "modifier": "linear"
+                  }
+                },
+                {
+                  "field_value_factor": {
+                    "field": "price_range",
+                    "factor": 1.5,
+                    "modifier": "linear"
+                  }
+                },
+                {
+                  "field_value_factor": {
+                    "field": "votes",
+                    "factor": 2,
+                    "modifier": "log1p"
+                  }
+                },
+                {
+                  "gauss": {
+                    "coordinates": {
+                      "origin": coordinates,
+                      "scale": "2km",
+                      "offset": "0km",
+                      "decay": 0.5
+                    }
+                  }
+                }
+              ]
             }
-          },
-          "boosts": {
-            "Coordinates": {
-              "type": "proximity",
-              "function": "exponential",
-              "center": coordinates,
-              "factor": 2
-            },
-            "AggregateRating": {
+          }
+        }
+        
+      );
+
+      "boosts": {
+            "aggregate_rating": {
               "type": "functional",
               "function": "linear",
               "operation": "multiply",
               "factor": 3
             },
-            "PriceRange": {
+            "price_range": {
               "type": "functional",
               "function": "linear",
               "operation": "multiply",
               "factor": 1.5
             },
-            "Votes": {
+            "votes": {
               "type": "functional",
               "function": "logarithmic",
               "operation": "multiply",
               "factor": 2
             }
-          }
-        }
-      );
+          },
+          "coordinates": {
+              "type": "proximity",
+              "function": "exponential",
+              "center": coordinates,
+              "factor": 2
+            },
 
-      const results = response.data.hits.hits;
+"query": {
+            "multi_match": {
+              "query": query,
+              "fields": [
+                "restaurant_name^5",
+                "city^4",
+                "cuisines^3"
+              ]
+            }
+          },
+          "boosts": {
+            "aggregate_rating": {
+              "type": "functional",
+              "function": "linear",
+              "operation": "multiply",
+              "factor": 3
+            },
+            "price_range": {
+              "type": "functional",
+              "function": "linear",
+              "operation": "multiply",
+              "factor": 1.5
+            },
+            "votes": {
+              "type": "functional",
+              "function": "logarithmic",
+              "operation": "multiply",
+              "factor": 2
+            }
+          },
+          "coordinates": {
+              "type": "proximity",
+              "function": "exponential",
+              "center": coordinates,
+              "factor": 2
+          },
+        }
+
+      const allResults = response.data.hits.hits;
       const localResults = [];
       const otherResults = [];
 
-      results.forEach(result => {
-        const distance = calcDist(coordinates, result._source.Coordinates);
+      allResults.forEach(result => {
+        const distance = calcDist(coordinates, result._source.coordinates);
         if (distance <= 2) {
           localResults.push(result);
         } else {
-          results.push(result);
+          otherResults.push(result);
         }
       });
 
       setLocalResults(localResults);
       setOtherResults(otherResults);
-      setResults(results);
+      setResults(allResults);
     } catch (error) {
       console.error('Erro ao realizar a busca', error);
     }
@@ -120,9 +196,9 @@ const SearchBox = () => {
             <h2>Encontrados por aqui</h2>
             {localResults.map((result) => (
               <div key={result._id} className="result-item">
-                <h3>{result._source.RestaurantName}</h3>
-                <p>⭐ {result._source.AggregateRating} • {result._source.Cuisines} • {calcDist(coordinates, result._source.Coordinates).toFixed(1)} km</p>
-                <p>{result._source.Currency} {result._source.AverageCostForTwo}</p>
+                <h3>{result._source.restaurant_name}</h3>
+                <p>⭐ {result._source.aggregate_rating} • {result._source.cuisines} • {calcDist(coordinates, result._source.coordinates).toFixed(1)} km</p>
+                <p>{result._source.currency} {result._source.average_cost_for_two}</p>
               </div>
             ))}
           </div>
@@ -131,8 +207,9 @@ const SearchBox = () => {
           <h2>Você também pode gostar</h2>
           {otherResults.map((result) => (
             <div key={result._id} className="result-item">
-              <h3>{result._source.RestaurantName}</h3>
-              <p>⭐ {result._source.AggregateRating} • {result._source.Cuisines} • {calcDist(coordinates, result._source.Coordinates).toFixed(1)} km</p>
+              <h3>{result._source.restaurant_name}</h3>
+              <p>⭐ {result._source.aggregate_rating} • {result._source.cuisines} • {calcDist(coordinates, result._source.coordinates).toFixed(1)} km</p>
+              <p>{result._source.currency} {result._source.average_cost_for_two}</p>
             </div>
           ))}
         </div>
